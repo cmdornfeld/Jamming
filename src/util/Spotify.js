@@ -1,6 +1,6 @@
 let accessToken;
-const clientId = process.env.CLIENT_ID;
-const redirectURI = process.env.REDIRECT_URI;
+const clientId = process.env.REACT_APP_CLIENT_ID;
+const redirectURI = process.env.REACT_APP_REDIRECT_URI;
 
 const Spotify = {
     getAccessToken() {
@@ -22,6 +22,45 @@ const Spotify = {
         }
     },
 
+    savePlaylist(name, trackUris) {
+        const accessToken = Spotify.getAccessToken();
+        let userId;
+
+        if (!name || !trackUris.length) {
+            return;
+        }
+
+        return fetch('https://api.spotify.com/v1/me', 
+            {headers: {
+                Authorization: `Bearer ${accessToken}`
+            }
+        })
+        .then(response => {
+            return response.json()
+        })
+        .then(jsonResponse => {
+            userId = jsonResponse.id;
+            return fetch(`https://api.spotify.com/v1/users/${userId}/playlists`,
+            {
+                headers: {Authorization: `Bearer ${accessToken}`},
+                method: 'POST',
+                body: JSON.stringify({name: name})
+            })
+            .then(response => {
+                return response.json()
+            })
+            .then(jsonResponse => {
+                const playlistId = jsonResponse.id;
+                return fetch(`https://api.spotify.com/v1/users/${userId}/playlists/${playlistId}/tracks`,
+                {
+                    headers: {Authorization: `Bearer ${accessToken}`},
+                    method: 'POST',
+                    body: JSON.stringify({uris: trackUris})
+                })
+            })
+        })
+    },
+
     search(term) {
         const accessToken = Spotify.getAccessToken();
         return fetch(`https://api.spotify.com/v1/search?type=track&q=${term}`,
@@ -34,7 +73,7 @@ const Spotify = {
         })
         .then(jsonResponse => {
             if (jsonResponse.tracks){
-                return jsonResponse.tracks.map(track => ({
+                return jsonResponse.tracks.items.map(track => ({
                             id: track.id,
                             name: track.name,
                             artist: track.artists[0].name,

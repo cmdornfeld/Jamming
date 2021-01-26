@@ -38,21 +38,28 @@ class App extends React.Component {
     }
 
     removeTrack(track) {
-      this.state.playlistTracks.filter(currentTrack => {
+      let tracks = this.state.playlistTracks.filter(currentTrack => {
         return currentTrack.id !== track.id
       });
 
       this.setState({
-        playlistName: this.state.playlistTracks
+        playlistTracks: tracks
       })
     }
 
     savePlaylist() {
-      this.state.playlistTracks.map(track => {
+      const trackUris = this.state.playlistTracks.map(track => {
         return (
-          track.trackURIs
+          track.uri
         )
-      })
+      });
+      Spotify.savePlaylist(this.state.playlistName, trackUris)
+        .then(() => {
+          this.setState({
+            playlistName: 'New Playlist',
+            playlistTracks: []
+          });
+        });
     }
 
     search(term) {
